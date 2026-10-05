@@ -1,0 +1,296 @@
+{
+  "name": "Ai profile matcher",
+  "nodes": [
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "108393c6-1499-41f1-9bf5-19e0e64a7b5a",
+              "name": "JobRole",
+              "value": "Python Developer,Mysql,Django",
+              "type": "string"
+            },
+            {
+              "id": "ced7b71a-47ab-43fd-a8fd-fcf7d041f9c2",
+              "name": "Location",
+              "value": "Chennai,chengalpattu",
+              "type": "string"
+            },
+            {
+              "id": "7f75c2db-25d8-43e1-92d8-3067fa5e3f4a",
+              "name": "Experince",
+              "value": "Fresher",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        464,
+        0
+      ],
+      "id": "85f2bc8c-15f6-4e16-8b56-ed38f7477b91",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Search for Python Developer job openings in Chennai and Chengalpattu posted within the last 7 days across both Naukri and LinkedIn portals. Ensure the output includes relevant matches based on Python, Django, and MySQL skills. Return the result in JSON format with fields: Company Name, Job Role, Skills Required, Location, and Apply Link.",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        688,
+        0
+      ],
+      "id": "54d260a3-75ee-487f-9ccd-18e731f0a061",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        704,
+        224
+      ],
+      "id": "17442cc0-df51-4e78-a924-d32e9415d053",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "your id number(place tha id)",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Previous node-ல  items\nconst items = $input.all().map(i => i.json);\n\n// Unique jobs filter பண்ணுறோம் (Apply Link-அ base வச்சு)\nconst uniqueJobs = [];\nconst seenLinks = new Set();\n\nfor (const job of items) {\n  const link = job['Apply Link'] || job.Apply_Link || job.links;\n  if (link && !seenLinks.has(link)) {\n    seenLinks.add(link);\n    uniqueJobs.push({ json: job });\n  }\n}\n\nreturn uniqueJobs;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        944,
+        -16
+      ],
+      "id": "b176241e-b653-45fc-9cac-0787cbd7fad5",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "value": "bsbiCZupfzFkZrdr",
+          "mode": "list",
+          "cachedResultName": "job_results",
+          "cachedResultUrl": "/projects/CDKrptDOw88kAnti/datatables/bsbiCZupfzFkZrdr"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Company_Name": "={{ $json['Company Name'] }}",
+            "Job_Role": "={{ $json['Job Role'] }}",
+            "skills": "={{ $json['Skills Required'] }}",
+            "Location": "={{ $json.Location }}",
+            "links": "={{ $json['Apply Link'] }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Company_Name",
+              "displayName": "Company_Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Job_Role",
+              "displayName": "Job_Role",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "skills",
+              "displayName": "skills",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Location",
+              "displayName": "Location",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "links",
+              "displayName": "links",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1168,
+        -16
+      ],
+      "id": "d3b9cf26-f3da-41a5-b0dc-f79f74da1373",
+      "name": "Insert row"
+    },
+    {
+      "parameters": {
+        "chatId": "1081308421",
+        "text": "=💼 *Latest Python Jobs*\n\n{{ $input.all().map(item => `🏢 *Company:* ${item.json.Company_Name || item.json['Company Name'] || ''}\\n👨‍💻 *Role:* ${item.json.Job_Role || item.json['Job Role'] || ''}\\n🛠 *Skills:* ${item.json.Skills_Required || item.json['Skills Required'] || ''}\\n📍 *Location:* ${item.json.Location || ''}\\n🔗 *Apply:* ${item.json.links || item.json['Apply Link'] || item.json.Apply_Link || 'N/A'}`).join('\\n\\n---\\n\\n') }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        960,
+        208
+      ],
+      "id": "cdf255da-0b88-4b3c-b35d-d397a57b135e",
+      "name": "Send a text message",
+      "webhookId": "15d7eba9-73d5-4eab-b7d0-bcd78571143d",
+      "retryOnFail": true,
+      "credentials": {
+        "telegramApi": {
+          "id": "your id number(place tha id)",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 11
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        224,
+        16
+      ],
+      "id": "1f138443-4eb7-4569-a64e-8f59885d8db9",
+      "name": "Schedule Trigger"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Insert row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert row": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "1473f9d3-09e9-49f1-8f55-761cf4efc9f7",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "d671943743f50439f3a51f143b7ca4ed5a32bb6345a71c00bed7d81816d67dcd"
+  },
+  "nodeGroups": [],
+  "id": "pBbsTmh8tcIPYLGH",
+  "tags": []
+}
